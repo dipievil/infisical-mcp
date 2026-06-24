@@ -1,6 +1,6 @@
 module github.com/dipievil/infisical-mcp
 
-go 1.25.5
+go 1.26.2
 
 require github.com/mark3labs/mcp-go v0.32.0
 

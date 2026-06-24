@@ -16,7 +16,7 @@ It communicates over **stdio** using JSON-RPC 2.0, so it plugs directly into Cla
 
 ## Requirements
 
-- Go 1.22 or later
+- Go 1.26 or later
 - A running [Infisical](https://infisical.com/) instance (self-hosted on your LAN or cloud)
 - A **Universal Auth** machine identity (client ID + client secret) with at least `read` access to the target project/environment
 
@@ -47,7 +47,7 @@ All configuration is done via environment variables.
 | `INFISICAL_HOST` | ✅ | – | Base URL of your Infisical instance, e.g. `http://192.168.1.10:8080` |
 | `INFISICAL_CLIENT_ID` | ✅ | – | Universal Auth machine identity client ID |
 | `INFISICAL_CLIENT_SECRET` | ✅ | – | Universal Auth machine identity client secret |
-| `INFISICAL_PROJECT_ID` | ✅ | – | Infisical project (workspace) ID |
+| `DEFAULT_INFISICAL_PROJECT_ID` | ✅ | – | Infisical project (workspace) ID |
 | `INFISICAL_ENVIRONMENT` | ✅ | – | Environment slug, e.g. `dev`, `staging`, `prod` |
 | `INFISICAL_SAFE_MODE` | ❌ | `false` | Set to `true` to disable `set_secret` (read-only mode) |
 
@@ -57,7 +57,7 @@ All configuration is done via environment variables.
 export INFISICAL_HOST=http://192.168.1.10:8080
 export INFISICAL_CLIENT_ID=<your-client-id>
 export INFISICAL_CLIENT_SECRET=<your-client-secret>
-export INFISICAL_PROJECT_ID=<your-project-id>
+export DEFAULT_INFISICAL_PROJECT_ID=<your-project-id>
 export INFISICAL_ENVIRONMENT=dev
 export INFISICAL_SAFE_MODE=true   # optional, enables read-only mode
 
@@ -81,7 +81,7 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) o
         "INFISICAL_HOST": "http://192.168.1.10:8080",
         "INFISICAL_CLIENT_ID": "your-client-id",
         "INFISICAL_CLIENT_SECRET": "your-client-secret",
-        "INFISICAL_PROJECT_ID": "your-project-id",
+        "DEFAULT_INFISICAL_PROJECT_ID": "your-project-id",
         "INFISICAL_ENVIRONMENT": "dev",
         "INFISICAL_SAFE_MODE": "true"
       }
@@ -103,7 +103,7 @@ Edit `~/.cursor/mcp.json` (or via **Cursor → Settings → MCP**):
         "INFISICAL_HOST": "http://192.168.1.10:8080",
         "INFISICAL_CLIENT_ID": "your-client-id",
         "INFISICAL_CLIENT_SECRET": "your-client-secret",
-        "INFISICAL_PROJECT_ID": "your-project-id",
+        "DEFAULT_INFISICAL_PROJECT_ID": "your-project-id",
         "INFISICAL_ENVIRONMENT": "dev",
         "INFISICAL_SAFE_MODE": "true"
       }
@@ -127,7 +127,7 @@ Add to your `.vscode/mcp.json` workspace file or user settings (`settings.json`)
           "INFISICAL_HOST": "http://192.168.1.10:8080",
           "INFISICAL_CLIENT_ID": "your-client-id",
           "INFISICAL_CLIENT_SECRET": "your-client-secret",
-          "INFISICAL_PROJECT_ID": "your-project-id",
+          "DEFAULT_INFISICAL_PROJECT_ID": "your-project-id",
           "INFISICAL_ENVIRONMENT": "dev",
           "INFISICAL_SAFE_MODE": "true"
         }
@@ -151,7 +151,7 @@ Edit `~/.config/zed/settings.json`:
           "INFISICAL_HOST": "http://192.168.1.10:8080",
           "INFISICAL_CLIENT_ID": "your-client-id",
           "INFISICAL_CLIENT_SECRET": "your-client-secret",
-          "INFISICAL_PROJECT_ID": "your-project-id",
+          "DEFAULT_INFISICAL_PROJECT_ID": "your-project-id",
           "INFISICAL_ENVIRONMENT": "dev",
           "INFISICAL_SAFE_MODE": "true"
         }
@@ -174,7 +174,7 @@ Edit `~/.codeium/windsurf/mcp_config.json`:
         "INFISICAL_HOST": "http://192.168.1.10:8080",
         "INFISICAL_CLIENT_ID": "your-client-id",
         "INFISICAL_CLIENT_SECRET": "your-client-secret",
-        "INFISICAL_PROJECT_ID": "your-project-id",
+        "DEFAULT_INFISICAL_PROJECT_ID": "your-project-id",
         "INFISICAL_ENVIRONMENT": "dev",
         "INFISICAL_SAFE_MODE": "true"
       }

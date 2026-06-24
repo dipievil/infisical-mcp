@@ -10,7 +10,7 @@
 //	export INFISICAL_HOST=http://192.168.1.10:8080
 //	export INFISICAL_CLIENT_ID=<id>
 //	export INFISICAL_CLIENT_SECRET=<secret>
-//	export INFISICAL_PROJECT_ID=<project-id>
+//	export DEFAULT_INFISICAL_PROJECT_ID=<project-id>
 //	export INFISICAL_ENVIRONMENT=dev
 //	./infisical-mcp
 package main
