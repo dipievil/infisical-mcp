@@ -15,23 +15,30 @@ import (
 
 // Register adds all Infisical tools to the given MCP server.
 func Register(s *server.MCPServer, cfg *config.Config, client *infisical.Client) {
-	registerListSecrets(s, client)
-	registerGetSecret(s, client)
+	registerListSecrets(s, cfg, client)
+	registerGetSecret(s, cfg, client)
 	registerSetSecret(s, cfg, client)
 }
 
 // ---- list_secrets -------------------------------------------------------
 
-func registerListSecrets(s *server.MCPServer, client *infisical.Client) {
+func registerListSecrets(s *server.MCPServer, cfg *config.Config, client *infisical.Client) {
 	tool := mcp.NewTool("list_secrets",
 		mcp.WithDescription(
 			"List all secret keys available in the configured Infisical project and environment. "+
-				"Returns an array of objects containing each secret's key and an optional comment.",
+				"Returns an array of objects containing each secret's key and an optional comment. "+
+				"Optionally supply a project_id to target a specific project; when INFISICAL_SAFE_MODE "+
+				"is enabled the default project is always used regardless of project_id.",
+		),
+		mcp.WithString("project_id",
+			mcp.Description("Optional project / workspace ID. Falls back to DEFAULT_INFISICAL_PROJECT_ID when not provided or when safe mode is enabled."),
 		),
 	)
 
 	s.AddTool(tool, func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		secrets, err := client.ListSecrets(ctx)
+		projectID := resolveProjectID(req, cfg)
+
+		secrets, err := client.ListSecrets(ctx, projectID)
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("failed to list secrets: %v", err)), nil
 		}
@@ -62,14 +69,19 @@ func registerListSecrets(s *server.MCPServer, client *infisical.Client) {
 
 // ---- get_secret ---------------------------------------------------------
 
-func registerGetSecret(s *server.MCPServer, client *infisical.Client) {
+func registerGetSecret(s *server.MCPServer, cfg *config.Config, client *infisical.Client) {
 	tool := mcp.NewTool("get_secret",
 		mcp.WithDescription(
-			"Retrieve the plaintext value of a single secret from Infisical.",
+			"Retrieve the plaintext value of a single secret from Infisical. "+
+				"Optionally supply a project_id to target a specific project; when INFISICAL_SAFE_MODE "+
+				"is enabled the default project is always used regardless of project_id.",
 		),
 		mcp.WithString("key",
 			mcp.Required(),
 			mcp.Description("The name (key) of the secret to retrieve."),
+		),
+		mcp.WithString("project_id",
+			mcp.Description("Optional project / workspace ID. Falls back to DEFAULT_INFISICAL_PROJECT_ID when not provided or when safe mode is enabled."),
 		),
 	)
 
@@ -79,7 +91,9 @@ func registerGetSecret(s *server.MCPServer, client *infisical.Client) {
 			return mcp.NewToolResultError(fmt.Sprintf("invalid parameter: %v", err)), nil
 		}
 
-		secret, err := client.GetSecret(ctx, key)
+		projectID := resolveProjectID(req, cfg)
+
+		secret, err := client.GetSecret(ctx, key, projectID)
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("failed to get secret: %v", err)), nil
 		}
@@ -111,7 +125,8 @@ func registerSetSecret(s *server.MCPServer, cfg *config.Config, client *infisica
 	tool := mcp.NewTool("set_secret",
 		mcp.WithDescription(
 			"Update (or create) the value of a secret in Infisical. "+
-				"This operation is only available when INFISICAL_SAFE_MODE is not set to \"true\".",
+				"Optionally supply a project_id to target a specific project; when INFISICAL_SAFE_MODE "+
+				"is enabled the default project is always used regardless of project_id.",
 		),
 		mcp.WithString("key",
 			mcp.Required(),
@@ -121,13 +136,12 @@ func registerSetSecret(s *server.MCPServer, cfg *config.Config, client *infisica
 			mcp.Required(),
 			mcp.Description("The new plaintext value for the secret."),
 		),
+		mcp.WithString("project_id",
+			mcp.Description("Optional project / workspace ID. Falls back to DEFAULT_INFISICAL_PROJECT_ID when not provided or when safe mode is enabled."),
+		),
 	)
 
 	s.AddTool(tool, func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		if cfg.SafeMode {
-			return mcp.NewToolResultError(config.ErrSafeModeEnabled.Error()), nil
-		}
-
 		key, err := req.RequireString("key")
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("invalid parameter 'key': %v", err)), nil
@@ -138,7 +152,9 @@ func registerSetSecret(s *server.MCPServer, cfg *config.Config, client *infisica
 			return mcp.NewToolResultError(fmt.Sprintf("invalid parameter 'value': %v", err)), nil
 		}
 
-		if err := client.SetSecret(ctx, key, value); err != nil {
+		projectID := resolveProjectID(req, cfg)
+
+		if err := client.SetSecret(ctx, key, value, projectID); err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("failed to set secret: %v", err)), nil
 		}
 
@@ -152,4 +168,20 @@ func registerSetSecret(s *server.MCPServer, cfg *config.Config, client *infisica
 
 		return mcp.NewToolResultText(string(out)), nil
 	})
+}
+
+// ---- helpers ------------------------------------------------------------
+
+// resolveProjectID returns the project_id to use for a tool call.
+// When SafeMode is true the configured default project is always used.
+// Otherwise the value of the "project_id" argument from the request is used,
+// falling back to an empty string (which causes the client to use its default).
+func resolveProjectID(req mcp.CallToolRequest, cfg *config.Config) string {
+	if cfg.SafeMode {
+		return cfg.ProjectID
+	}
+	if id, ok := req.GetArguments()["project_id"].(string); ok {
+		return id
+	}
+	return ""
 }

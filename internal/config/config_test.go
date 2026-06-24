@@ -16,11 +16,11 @@ func setEnv(t *testing.T, vars map[string]string) {
 
 func validEnv() map[string]string {
 	return map[string]string{
-		"INFISICAL_HOST":          "http://192.168.1.10:8080",
-		"INFISICAL_CLIENT_ID":     "test-client-id",
-		"INFISICAL_CLIENT_SECRET": "test-client-secret",
-		"INFISICAL_PROJECT_ID":    "test-project-id",
-		"INFISICAL_ENVIRONMENT":   "dev",
+		"INFISICAL_HOST":              "http://192.168.1.10:8080",
+		"INFISICAL_CLIENT_ID":         "test-client-id",
+		"INFISICAL_CLIENT_SECRET":     "test-client-secret",
+		"DEFAULT_INFISICAL_PROJECT_ID": "test-project-id",
+		"INFISICAL_ENVIRONMENT":       "dev",
 	}
 }
 
@@ -90,7 +90,7 @@ func TestLoad_MissingRequired(t *testing.T) {
 		"INFISICAL_HOST",
 		"INFISICAL_CLIENT_ID",
 		"INFISICAL_CLIENT_SECRET",
-		"INFISICAL_PROJECT_ID",
+		"DEFAULT_INFISICAL_PROJECT_ID",
 		"INFISICAL_ENVIRONMENT",
 	}
 

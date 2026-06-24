@@ -59,7 +59,7 @@ func TestListSecrets(t *testing.T) {
 		})
 	})
 
-	secrets, err := client.ListSecrets(context.Background())
+	secrets, err := client.ListSecrets(context.Background(), "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -90,7 +90,7 @@ func TestGetSecret(t *testing.T) {
 		})
 	})
 
-	secret, err := client.GetSecret(context.Background(), "MY_SECRET")
+	secret, err := client.GetSecret(context.Background(), "MY_SECRET", "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -107,7 +107,7 @@ func TestGetSecret_NotFound(t *testing.T) {
 		http.NotFound(w, r)
 	})
 
-	_, err := client.GetSecret(context.Background(), "MISSING")
+	_, err := client.GetSecret(context.Background(), "MISSING", "")
 	if err == nil {
 		t.Fatal("expected error for missing secret")
 	}
@@ -138,7 +138,7 @@ func TestSetSecret(t *testing.T) {
 		})
 	})
 
-	if err := client.SetSecret(context.Background(), "DB_HOST", "newvalue"); err != nil {
+	if err := client.SetSecret(context.Background(), "DB_HOST", "newvalue", ""); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if !called {
@@ -151,7 +151,7 @@ func TestSetSecret_ServerError(t *testing.T) {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 	})
 
-	if err := client.SetSecret(context.Background(), "KEY", "val"); err == nil {
+	if err := client.SetSecret(context.Background(), "KEY", "val", ""); err == nil {
 		t.Fatal("expected error for server error response")
 	}
 }
@@ -170,7 +170,7 @@ func TestLoginFailure(t *testing.T) {
 
 	client := infisical.New(srv.URL, "bad-id", "bad-secret", "proj", "dev")
 
-	_, err := client.ListSecrets(context.Background())
+	_, err := client.ListSecrets(context.Background(), "")
 	if err == nil {
 		t.Fatal("expected error for login failure")
 	}

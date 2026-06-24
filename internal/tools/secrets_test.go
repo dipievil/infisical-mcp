@@ -194,23 +194,39 @@ func TestSetSecret_Tool_SafeModeOff(t *testing.T) {
 }
 
 func TestSetSecret_Tool_SafeModeOn(t *testing.T) {
+	called := false
 	s := setupServer(t, true, func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPatch {
-			t.Error("PATCH should not be called when safe mode is on")
+			called = true
+			// Verify the request uses the default project ID ("proj")
+			var body map[string]string
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Errorf("failed to decode request body: %v", err)
+			}
+			if body["workspaceId"] != "proj" {
+				t.Errorf("expected default project 'proj', got %q", body["workspaceId"])
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]any{ //nolint:errcheck
+				"secret": map[string]any{"secretKey": "K", "secretValue": "V"},
+			})
+			return
 		}
 		http.NotFound(w, r)
 	})
 
+	// Pass a custom project_id; SafeMode should ignore it and use the default.
 	resp := s.HandleMessage(context.Background(), toolCallMsg("set_secret", map[string]any{
-		"key":   "K",
-		"value": "V",
+		"key":        "K",
+		"value":      "V",
+		"project_id": "other-project",
 	}))
 	result := parseToolResponse(t, resp)
 
-	if !result.IsError {
-		t.Error("expected tool to return an error when safe mode is on")
+	if result.IsError {
+		t.Fatalf("set_secret should succeed in safe mode (restricted to default project): %s", result.Text)
 	}
-	if !strings.Contains(result.Text, "safe mode") {
-		t.Errorf("expected safe mode message, got: %s", result.Text)
+	if !called {
+		t.Error("expected PATCH to be called on Infisical even in safe mode")
 	}
 }

@@ -21,35 +21,39 @@ type Config struct {
 	// ClientSecret is the Universal Auth client secret used to obtain an access token.
 	ClientSecret string
 
-	// ProjectID is the Infisical project (workspace) ID to operate on.
+	// ProjectID is the default Infisical project (workspace) ID to operate on.
+	// Loaded from DEFAULT_INFISICAL_PROJECT_ID. Used when no project_id is supplied
+	// by the agent at call time, and always enforced when SafeMode is true.
 	ProjectID string
 
 	// Environment is the Infisical environment slug (e.g. "dev", "staging", "prod").
 	Environment string
 
-	// SafeMode controls whether set_secret is allowed.
-	// When false (default), set_secret is enabled.
-	// When true, set_secret calls are rejected.
+	// SafeMode restricts all secret operations to the default project (ProjectID).
+	// When true, any project_id supplied by the agent is ignored and the configured
+	// DEFAULT_INFISICAL_PROJECT_ID is used instead.
 	SafeMode bool
 }
 
 // Load reads configuration from environment variables.
 //
 // Required variables:
-//   - INFISICAL_HOST        – base URL of the Infisical instance
-//   - INFISICAL_CLIENT_ID   – Universal Auth client ID
-//   - INFISICAL_CLIENT_SECRET – Universal Auth client secret
-//   - INFISICAL_PROJECT_ID  – project / workspace ID
-//   - INFISICAL_ENVIRONMENT – environment slug (e.g. dev)
+//   - INFISICAL_HOST                – base URL of the Infisical instance
+//   - INFISICAL_CLIENT_ID           – Universal Auth client ID
+//   - INFISICAL_CLIENT_SECRET       – Universal Auth client secret
+//   - DEFAULT_INFISICAL_PROJECT_ID  – default project / workspace ID
+//   - INFISICAL_ENVIRONMENT         – environment slug (e.g. dev)
 //
 // Optional variables:
-//   - INFISICAL_SAFE_MODE   – set to "true" to disable set_secret (default: false)
+//   - INFISICAL_SAFE_MODE – set to "true" to restrict all operations to the
+//     default project (DEFAULT_INFISICAL_PROJECT_ID), ignoring any project_id
+//     supplied by the agent (default: false)
 func Load() (*Config, error) {
 	cfg := &Config{
 		InfisicalHost: strings.TrimRight(getenv("INFISICAL_HOST", ""), "/"),
 		ClientID:      os.Getenv("INFISICAL_CLIENT_ID"),
 		ClientSecret:  os.Getenv("INFISICAL_CLIENT_SECRET"),
-		ProjectID:     os.Getenv("INFISICAL_PROJECT_ID"),
+		ProjectID:     os.Getenv("DEFAULT_INFISICAL_PROJECT_ID"),
 		Environment:   os.Getenv("INFISICAL_ENVIRONMENT"),
 		SafeMode:      strings.ToLower(os.Getenv("INFISICAL_SAFE_MODE")) == "true",
 	}
@@ -75,7 +79,7 @@ func (c *Config) validate() error {
 		missing = append(missing, "INFISICAL_CLIENT_SECRET")
 	}
 	if c.ProjectID == "" {
-		missing = append(missing, "INFISICAL_PROJECT_ID")
+		missing = append(missing, "DEFAULT_INFISICAL_PROJECT_ID")
 	}
 	if c.Environment == "" {
 		missing = append(missing, "INFISICAL_ENVIRONMENT")
@@ -98,5 +102,6 @@ func getenv(key, fallback string) string {
 	return fallback
 }
 
-// ErrSafeModeEnabled is returned when set_secret is called while safe mode is on.
-var ErrSafeModeEnabled = errors.New("safe mode is enabled: write operations are not allowed")
+// ErrSafeModeEnabled is returned when an operation would target a non-default
+// project while safe mode is enabled.
+var ErrSafeModeEnabled = errors.New("safe mode is enabled: only the default project can be accessed")

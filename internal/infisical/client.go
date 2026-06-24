@@ -116,14 +116,19 @@ type listSecretsResponse struct {
 	Secrets []Secret `json:"secrets"`
 }
 
-// ListSecrets returns all secrets for the configured project and environment.
-func (c *Client) ListSecrets(ctx context.Context) ([]Secret, error) {
+// ListSecrets returns all secrets for the given project and configured environment.
+// If projectID is empty, the client's default project ID is used.
+func (c *Client) ListSecrets(ctx context.Context, projectID string) ([]Secret, error) {
 	if err := c.ensureToken(ctx); err != nil {
 		return nil, err
 	}
 
+	if projectID == "" {
+		projectID = c.projectID
+	}
+
 	url := fmt.Sprintf("%s/api/v3/secrets/raw?workspaceId=%s&environment=%s",
-		c.host, c.projectID, c.environment)
+		c.host, projectID, c.environment)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -154,13 +159,18 @@ type getSecretResponse struct {
 }
 
 // GetSecret returns the value of a single secret identified by key.
-func (c *Client) GetSecret(ctx context.Context, key string) (*Secret, error) {
+// If projectID is empty, the client's default project ID is used.
+func (c *Client) GetSecret(ctx context.Context, key, projectID string) (*Secret, error) {
 	if err := c.ensureToken(ctx); err != nil {
 		return nil, err
 	}
 
+	if projectID == "" {
+		projectID = c.projectID
+	}
+
 	url := fmt.Sprintf("%s/api/v3/secrets/raw/%s?workspaceId=%s&environment=%s",
-		c.host, key, c.projectID, c.environment)
+		c.host, key, projectID, c.environment)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -196,13 +206,18 @@ type updateSecretRequest struct {
 }
 
 // SetSecret updates (or creates) the value of a secret identified by key.
-func (c *Client) SetSecret(ctx context.Context, key, value string) error {
+// If projectID is empty, the client's default project ID is used.
+func (c *Client) SetSecret(ctx context.Context, key, value, projectID string) error {
 	if err := c.ensureToken(ctx); err != nil {
 		return err
 	}
 
+	if projectID == "" {
+		projectID = c.projectID
+	}
+
 	body, err := json.Marshal(updateSecretRequest{
-		WorkspaceID: c.projectID,
+		WorkspaceID: projectID,
 		Environment: c.environment,
 		SecretValue: value,
 	})
